@@ -1,0 +1,135 @@
+﻿Build1=Default,com.msgumball.dev.json
+File1=example.json
+FileGroup1=Default Group
+Group=Default Group
+IconFile=
+Library1=core
+Library2=json
+ManifestCode=
+NumberOfFiles=1
+NumberOfLibraries=2
+NumberOfModules=0
+Version=8.8
+@EndOfDesignText@
+#Region Module Attributes
+	#FullScreen: False
+	#IncludeTitle: True
+	#ApplicationLabel: MSG JSON Test for MSGumballMission
+	#VersionCode: 1
+	#VersionName: 
+	#SupportedOrientations: unspecified
+#End Region
+
+'Activity module
+Sub Process_Globals
+	Private msgmission As Map
+End Sub
+
+Sub Globals
+	Private msgMissionJSONTest As String
+	Private msgData As String
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+	msgMissionJSONTest = $"{"comment":"MSG Mission, DJI Matrice 100","version": 1,"msgMisInfo": [{"comment":              "MSG_CMD_MISSION: Used for mission settings","id":95,"rawName":"MissionRaw","friendlyName":"MSG Mission","description":"Initial mission settings.","specifiesCoordinate":True,"friendlyEdit":True,"category":"Mission","param1":{"label":"Latitude","default":37.80378,"decimalPlaces":6},"param2":{"label":"Longitude","default":-122.462276,"decimalPlaces":6}}]}"$
+	msgData = File.DirDefaultExternal & "/MSGData"
+	Log(msgData)
+	If File.ExternalWritable = False Then
+		Msgbox("Cannot write on storage card.", "")
+		Return
+	End If
+	If File.IsDirectory(File.DirDefaultExternal,"/MSGData") = True Then
+		Dim fileList As List = File.ListFiles(msgData)
+		Msgbox(fileList, "MSGData:")
+	Else
+		File.MakeDir(File.DirDefaultExternal,"/MSGData")
+	End If
+	msgmission = ParseMSGMissionData(msgMissionJSONTest)
+	Dim JSONGenerator As JSONGenerator
+	JSONGenerator.Initialize(msgmission)
+	Msgbox(JSONGenerator.ToPrettyString(2), "Generated JSON")
+	File.WriteString(msgData, "template.json", JSONGenerator.ToPrettyString(2))
+	Log(File.ListFiles(msgData))
+End Sub
+
+Sub ParseMSGMissionData(jsonstring As String) As Map 
+	'parse the msg mission json file
+	Dim jsonparser As JSONParser
+	jsonparser.Initialize(jsonstring)
+	Dim root As Map = jsonparser.NextObject
+	Dim comment As String = root.Get("comment")
+	Dim version As Int = root.Get("version")
+	Dim msgMisInfo As List = root.Get("msgMisInfo")
+	For Each colmsgMisInfo As Map In msgMisInfo
+		Dim friendlyEdit As String = colmsgMisInfo.Get("friendlyEdit")
+		Dim specifiesCoordinate As String = colmsgMisInfo.Get("specifiesCoordinate")
+		Dim description As String = colmsgMisInfo.Get("description")
+		Dim comment As String = colmsgMisInfo.Get("comment")
+		Dim id As Int = colmsgMisInfo.Get("id")
+		Dim category As String = colmsgMisInfo.Get("category")
+		Dim rawName As String = colmsgMisInfo.Get("rawName")
+		Dim friendlyName As String = colmsgMisInfo.Get("friendlyName")
+		Dim param1 As Map = colmsgMisInfo.Get("param1")
+		Dim default As Double = param1.Get("default")
+		Dim decimalPlaces As Int = param1.Get("decimalPlaces")
+		Dim label As String = param1.Get("label")
+		Dim param2 As Map = colmsgMisInfo.Get("param2")
+		Dim default As Double = param2.Get("default")
+		Dim decimalPlaces As Int = param2.Get("decimalPlaces")
+		Dim label As String = param2.Get("label")
+	Next
+	Return root
+End Sub
+
+Sub WriteMapExample(map As Map, filename As String)
+	map.Initialize
+	For i = 1 To 10
+		map.Put("Key" & i, "Value" & i)
+	Next
+	File.WriteMap(File.DirRootExternal, filename, map)
+End Sub
+
+Sub ReadMapExample
+	Dim Map1 As Map
+	'Again we are not initializing the map.
+	Map1 = File.ReadMap(File.DirRootExternal, "Map.txt")
+	'Append all entries to a string builder
+	Dim sb As StringBuilder
+	sb.Initialize
+	sb.Append("The map entries are:").Append(CRLF)
+	For i = 0 To Map1.Size - 1
+		sb.Append("Key = ").Append(Map1.GetKeyAt(i)).Append(", Value = ")
+		sb.Append(Map1.GetValueAt(i)).Append(CRLF)
+	Next
+	Msgbox(sb.ToString,"")
+End Sub
+
+Sub WriteTextWriter
+	Dim TextWriter1 As TextWriter
+	TextWriter1.Initialize(File.OpenOutput(File.DirRootExternal, "Text.txt", False))
+	For i = 1 To 10
+		TextWriter1.WriteLine("Line" & i)
+	Next
+	TextWriter1.Close
+End Sub
+
+Sub ReadTextReader
+	Dim TextReader1 As TextReader
+	TextReader1.Initialize(File.OpenInput(File.DirRootExternal, "Text.txt"))
+	Dim line As String
+	line = TextReader1.ReadLine
+	Do While line <> Null
+		Log(line) 'write the line to LogCat
+		line = TextReader1.ReadLine
+	Loop
+	TextReader1.Close
+End Sub
+
+Sub Activity_Resume
+
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+
+End Sub
+

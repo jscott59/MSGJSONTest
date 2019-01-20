@@ -1,0 +1,15 @@
+#B4A
+Objects/b4xlibs/
+Objects/bin/
+Objects/gen/
+Objects/shell/
+*.apk
+*.dex
+*.jar
+!AdditionalLibraries/*.jar
+*.aar
+!AdditionalLibraries/*.aar
+*.ipa
+*.meta
+*.class
+
