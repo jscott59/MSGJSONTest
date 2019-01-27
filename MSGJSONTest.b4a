@@ -145,37 +145,43 @@ Sub FilePicker_onSelectedFilePaths(selected() As String)
 End Sub
 
 Sub ParseMSGMissionData(jsonstring As String) As Map 
-	'parse the msg mission json file
-	Dim parser As JSONParser 
-	parser.Initialize(jsonstring)
-	Dim root As Map = parser.NextObject 
-	Dim msgMisInfo As List = root.Get("msgMisInfo") 
-	For Each colmsgMisInfo As Map In msgMisInfo 
-		Dim altitude As String = colmsgMisInfo.Get("altitude") 
-		Dim autoflightspeed As String = colmsgMisInfo.Get("autoflightspeed") 
-		Dim description As String = colmsgMisInfo.Get("description") 
-		Dim rawName As String = colmsgMisInfo.Get("rawName") 
-		Dim param1 As Map = colmsgMisInfo.Get("param1") 
-		Dim default As Double = param1.Get("default") 
-		Dim decimalPlaces As Int = param1.Get("decimalPlaces") 
-		Dim label As String = param1.Get("label") 
-		Dim param2 As Map = colmsgMisInfo.Get("param2") 
-		Dim default As Double = param2.Get("default") 
-		Dim decimalPlaces As Int = param2.Get("decimalPlaces") 
-		Dim label As String = param2.Get("label") 
-		Dim friendlyEdit As String = colmsgMisInfo.Get("friendlyEdit") 
-		Dim maxflightspeed As String = colmsgMisInfo.Get("maxflightspeed") 
-		Dim specifiesCoordinate As String = colmsgMisInfo.Get("specifiesCoordinate") 
-		Dim comment As String = colmsgMisInfo.Get("comment") 
-		Dim id As Int = colmsgMisInfo.Get("id") 
-		Dim category As String = colmsgMisInfo.Get("category") 
-		Dim finishaction As String = colmsgMisInfo.Get("finishaction") 
-		Dim friendlyName As String = colmsgMisInfo.Get("friendlyName") 
-		Dim flightspeed As String = colmsgMisInfo.Get("flightspeed") 
-	Next 
-	Dim comment As String = root.Get("comment") 
-	Dim version As Int = root.Get("version") 
-	Return root
+	Try
+		'parse the msg mission json file
+		Dim parser As JSONParser 
+		parser.Initialize(jsonstring)
+		Dim root As Map = parser.NextObject 
+		Dim msgMisInfo As List = root.Get("msgMisInfo") 
+		For Each colmsgMisInfo As Map In msgMisInfo 
+			Dim altitude As String = colmsgMisInfo.Get("altitude") 
+			Dim autoflightspeed As String = colmsgMisInfo.Get("autoflightspeed") 
+			Dim description As String = colmsgMisInfo.Get("description") 
+			Dim rawName As String = colmsgMisInfo.Get("rawName") 
+			Dim param1 As Map = colmsgMisInfo.Get("param1") 
+			Dim default As Double = param1.Get("default") 
+			Dim decimalPlaces As Int = param1.Get("decimalPlaces") 
+			Dim label As String = param1.Get("label") 
+			Dim param2 As Map = colmsgMisInfo.Get("param2") 
+			Dim default As Double = param2.Get("default") 
+			Dim decimalPlaces As Int = param2.Get("decimalPlaces") 
+			Dim label As String = param2.Get("label") 
+			Dim friendlyEdit As String = colmsgMisInfo.Get("friendlyEdit") 
+			Dim maxflightspeed As String = colmsgMisInfo.Get("maxflightspeed") 
+			Dim specifiesCoordinate As String = colmsgMisInfo.Get("specifiesCoordinate") 
+			Dim comment As String = colmsgMisInfo.Get("comment") 
+			Dim id As Int = colmsgMisInfo.Get("id") 
+			Dim category As String = colmsgMisInfo.Get("category") 
+			Dim finishaction As String = colmsgMisInfo.Get("finishaction") 
+			Dim friendlyName As String = colmsgMisInfo.Get("friendlyName") 
+			Dim flightspeed As String = colmsgMisInfo.Get("flightspeed") 
+		Next 
+		Dim comment As String = root.Get("comment") 
+		Dim version As Int = root.Get("version") 
+		Return root
+	Catch
+		Log(LastException)
+		Msgbox("MSG Mission will now close", "JSON Parser Exception")
+		ExitApplication
+	End Try
 End Sub
 
 Sub WriteMapExample(map As Map, filename As String)
