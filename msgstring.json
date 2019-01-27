@@ -1,0 +1,27 @@
+{"comment":"MSG Mission, DJI Matrice 100","version": 1,"msgMisInfo": 
+[{"comment":"MSG_CMD_MISSION: Used for mission settings",
+"id": 95,
+"rawName":"MissionRaw",
+"friendlyName": "MSG Mission",
+"description":"Initial mission settings.",
+"specifiesCoordinate":true,
+"friendlyEdit": true,
+"category": "Basic",
+"altitude":	"0",
+"flightspeed": "0",
+"autoflightspeed": "0",
+"maxflightspeed": "0",
+"finishaction":	"No Action",
+"param1": {
+"label":"Latitude",
+"default":37.803784,
+"decimalPlaces":6
+},
+"param2": {
+"label":"Longitude",
+"default":-122.462276,
+"decimalPlaces":6
+}
+}
+]
+}

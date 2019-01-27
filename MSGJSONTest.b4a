@@ -1,13 +1,18 @@
 ﻿Build1=Default,com.msgumball.dev.json
-File1=example.json
+File1=1.bal
+File2=example.json
+File3=icons8-polygon-50.png
 FileGroup1=Default Group
+FileGroup2=Default Group
+FileGroup3=Default Group
 Group=Default Group
 IconFile=
 Library1=core
 Library2=json
+Library3=filepicker
 ManifestCode=
-NumberOfFiles=1
-NumberOfLibraries=2
+NumberOfFiles=3
+NumberOfLibraries=3
 NumberOfModules=0
 Version=8.8
 @EndOfDesignText@
@@ -20,19 +25,100 @@ Version=8.8
 	#SupportedOrientations: unspecified
 #End Region
 
-'Activity module
+'Main Activity
 Sub Process_Globals
-	Private msgmission As Map
+	Dim msgmission As Map
 End Sub
 
 Sub Globals
-	Private msgMissionJSONTest As String
-	Private msgData As String
+	Dim msgMissionJSONTest As String
+	Dim msgData As String
+	Dim fdIcon As Bitmap
+	Dim JSONSelected As String
+	Dim fp As FilePickerDialog
+	Dim props As DialogProperties
+	Dim item As FileListItem
+	'  SELECTION_MODES
+
+	'  SINGLE_MODE specifies that a single File/Directory has to be selected
+	'  from the list of Files/Directories. It is the default Selection Mode.
+   
+	Dim Const SINGLE_MODE As Int = 0
+
+	'  MULTI_MODE specifies that multiple Files/Directories has to be selected
+	'  from the list of Files/Directories.
+   
+	Dim Const MULTI_MODE As Int = 1
+
+	'  SELECTION_TYPES
+
+	'  FILE_SELECT specifies that from list of Files/Directories a File has to
+	'  be selected.
+   
+	Dim Const FILE_SELECT As Int = 0
+
+	'  DIR_SELECT specifies that from list of Files/Directories a Directory has to
+	'  be selected. It is the default Selection Type.
+   
+	Dim Const DIR_SELECT As Int = 1
+
+	'  FILE_AND_DIR_SELECT specifies that from list of Files/Directories both
+	'  can be selected.
+ 
+	Dim Const FILE_AND_DIR_SELECT As Int = 2
 End Sub
 
 Sub Activity_Create(FirstTime As Boolean)
+	If FirstTime Then
+		FilePickerInitialize
+	End If
+	Dim ext() As String
+	ext  = Array As String ("json")
+	props.Initialize("",File.DirDefaultExternal & "/MSGData", SINGLE_MODE, FILE_SELECT, ext) 'Array As String(".jpg",".png",".pdf"))
+	item.Initialize("")
+	fp.Initialize("FilePicker")
+	fp.Properties = props
+	Wait For FilePicker_Complete
+	If item.Filename <> "" Then
+		'Msgbox(item.Filename, "Mission File")
+		'Log("File path: " & item.Location)
+		Log("File name: " & item.Filename)
+	Else 
+		Msgbox("No Mission File Found - Exiting","")
+		ExitApplication
+	End If	
+'	Dim TextReader1 As TextReader
+	Dim pattern As String
+	pattern = "^(.*/)([^/]*)$"
+	Dim jsonText As String
+	Dim filepath As String
+	Dim filename As String
+	Dim Matcher1 As Matcher = Regex.Matcher(pattern, item.Filename)
+	Do While Matcher1.Find
+		Log("Found: " & Matcher1.Match)
+		For g = 1 To Matcher1.GroupCount
+			Log("Group #" & g & ": " & Matcher1.Group(g))
+		Next
+		filepath = Matcher1.Group(1)
+		filename = Matcher1.Group(2)
+	Loop
+'	TextReader1.Initialize(File.OpenInput(filepath, filename))
+	jsonText = File.ReadString(filepath, filename)
+	Log(jsonText) 'write the string to Log
+'	Do While jsonText <> Null
+'		Log(jsonText) 'write the line to LogCat
+'		jsonText = TextReader1.ReadLine
+'	Loop
+'	TextReader1.Close
+	Dim jsonMap As Map
+	jsonMap.Initialize
+	jsonMap = ParseMSGMissionData(jsonText)
+End Sub
+
+Sub FilePickerInitialize
 	msgMissionJSONTest = $"{"comment":"MSG Mission, DJI Matrice 100","version": 1,"msgMisInfo": [{"comment":              "MSG_CMD_MISSION: Used for mission settings","id":95,"rawName":"MissionRaw","friendlyName":"MSG Mission","description":"Initial mission settings.","specifiesCoordinate":True,"friendlyEdit":True,"category":"Mission","param1":{"label":"Latitude","default":37.80378,"decimalPlaces":6},"param2":{"label":"Longitude","default":-122.462276,"decimalPlaces":6}}]}"$
 	msgData = File.DirDefaultExternal & "/MSGData"
+	fdIcon.Initialize(File.DirAssets, "icons8-polygon-50.png")
 	Log(msgData)
 	If File.ExternalWritable = False Then
 		Msgbox("Cannot write on storage card.", "")
@@ -40,44 +126,55 @@ Sub Activity_Create(FirstTime As Boolean)
 	End If
 	If File.IsDirectory(File.DirDefaultExternal,"/MSGData") = True Then
 		Dim fileList As List = File.ListFiles(msgData)
-		Msgbox(fileList, "MSGData:")
 	Else
 		File.MakeDir(File.DirDefaultExternal,"/MSGData")
 	End If
-	msgmission = ParseMSGMissionData(msgMissionJSONTest)
-	Dim JSONGenerator As JSONGenerator
-	JSONGenerator.Initialize(msgmission)
-	Msgbox(JSONGenerator.ToPrettyString(2), "Generated JSON")
-	File.WriteString(msgData, "template.json", JSONGenerator.ToPrettyString(2))
-	Log(File.ListFiles(msgData))
+	Return	
+End Sub
+
+Sub FilePicker_onSelectedFilePaths(selected() As String)
+	Log($"FilePicker_onSelectedFilePaths(${selected.Length})"$)
+	For i = 0 To selected.Length -1
+		Log($"${selected(i)}"$)
+	Next
+	If selected <> Null Then
+		 item.Filename = selected(0)
+	End If
+	fp.dismiss
+	CallSubDelayed(Me, "FilePicker_Complete")
 End Sub
 
 Sub ParseMSGMissionData(jsonstring As String) As Map 
 	'parse the msg mission json file
-	Dim jsonparser As JSONParser
-	jsonparser.Initialize(jsonstring)
-	Dim root As Map = jsonparser.NextObject
-	Dim comment As String = root.Get("comment")
-	Dim version As Int = root.Get("version")
-	Dim msgMisInfo As List = root.Get("msgMisInfo")
-	For Each colmsgMisInfo As Map In msgMisInfo
-		Dim friendlyEdit As String = colmsgMisInfo.Get("friendlyEdit")
-		Dim specifiesCoordinate As String = colmsgMisInfo.Get("specifiesCoordinate")
-		Dim description As String = colmsgMisInfo.Get("description")
-		Dim comment As String = colmsgMisInfo.Get("comment")
-		Dim id As Int = colmsgMisInfo.Get("id")
-		Dim category As String = colmsgMisInfo.Get("category")
-		Dim rawName As String = colmsgMisInfo.Get("rawName")
-		Dim friendlyName As String = colmsgMisInfo.Get("friendlyName")
-		Dim param1 As Map = colmsgMisInfo.Get("param1")
-		Dim default As Double = param1.Get("default")
-		Dim decimalPlaces As Int = param1.Get("decimalPlaces")
-		Dim label As String = param1.Get("label")
-		Dim param2 As Map = colmsgMisInfo.Get("param2")
-		Dim default As Double = param2.Get("default")
-		Dim decimalPlaces As Int = param2.Get("decimalPlaces")
-		Dim label As String = param2.Get("label")
-	Next
+	Dim parser As JSONParser 
+	parser.Initialize(jsonstring)
+	Dim root As Map = parser.NextObject 
+	Dim msgMisInfo As List = root.Get("msgMisInfo") 
+	For Each colmsgMisInfo As Map In msgMisInfo 
+		Dim altitude As String = colmsgMisInfo.Get("altitude") 
+		Dim autoflightspeed As String = colmsgMisInfo.Get("autoflightspeed") 
+		Dim description As String = colmsgMisInfo.Get("description") 
+		Dim rawName As String = colmsgMisInfo.Get("rawName") 
+		Dim param1 As Map = colmsgMisInfo.Get("param1") 
+		Dim default As Double = param1.Get("default") 
+		Dim decimalPlaces As Int = param1.Get("decimalPlaces") 
+		Dim label As String = param1.Get("label") 
+		Dim param2 As Map = colmsgMisInfo.Get("param2") 
+		Dim default As Double = param2.Get("default") 
+		Dim decimalPlaces As Int = param2.Get("decimalPlaces") 
+		Dim label As String = param2.Get("label") 
+		Dim friendlyEdit As String = colmsgMisInfo.Get("friendlyEdit") 
+		Dim maxflightspeed As String = colmsgMisInfo.Get("maxflightspeed") 
+		Dim specifiesCoordinate As String = colmsgMisInfo.Get("specifiesCoordinate") 
+		Dim comment As String = colmsgMisInfo.Get("comment") 
+		Dim id As Int = colmsgMisInfo.Get("id") 
+		Dim category As String = colmsgMisInfo.Get("category") 
+		Dim finishaction As String = colmsgMisInfo.Get("finishaction") 
+		Dim friendlyName As String = colmsgMisInfo.Get("friendlyName") 
+		Dim flightspeed As String = colmsgMisInfo.Get("flightspeed") 
+	Next 
+	Dim comment As String = root.Get("comment") 
+	Dim version As Int = root.Get("version") 
 	Return root
 End Sub
 
@@ -126,7 +223,7 @@ Sub ReadTextReader
 End Sub
 
 Sub Activity_Resume
-
+	fp.show
 End Sub
 
 Sub Activity_Pause (UserClosed As Boolean)
